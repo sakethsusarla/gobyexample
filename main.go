@@ -2,22 +2,29 @@ package main
 
 import (
 	"fmt"
-	"net/http"
+	"sync"
 )
 
 func main() {
-	http.HandleFunc("/hello", Hello)
-	fmt.Println("Listening on port 8080 ...")
-	err := http.ListenAndServe(":8080", nil)
-	if err != nil {
-		fmt.Println("Error starting server:", err)
-	}
+	wg := sync.WaitGroup{}
+
+	wg.Add(2)
+
+	// it is important to pass the wait group by reference
+	// otherwise, the counter of the `wg` instance wouldn't decrement
+	// when the goroutine has invoked wg.Done()
+	go Hello(&wg)
+	go Bye(&wg)
+
+	wg.Wait()
 }
 
-func Hello(w http.ResponseWriter, r *http.Request) {
-	_, err := fmt.Fprint(w, "Hello, world!")
-	if err != nil {
-		fmt.Println("Error writing response:", err)
-		return
-	}
+func Hello(wg *sync.WaitGroup) {
+	defer wg.Done()
+	fmt.Println("hello, world!")
+}
+
+func Bye(wg *sync.WaitGroup) {
+	defer wg.Done()
+	fmt.Println("bye!")
 }
